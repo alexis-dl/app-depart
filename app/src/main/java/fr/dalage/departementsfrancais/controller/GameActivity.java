@@ -1,10 +1,13 @@
 package fr.dalage.departementsfrancais.controller;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -28,10 +31,19 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
     private int mRemainingQuestionCount;
     private int mScore;
     public static final String BUNDLE_EXTRA_SCORE = "BUNDLE_EXTRA_SCORE";
+    public static final String BUNDLE_STATE_SCORE = "BUNDLE_STATE_SCORE";
+    public static final String BUNDLE_STATE_QUESTION = "BUNDLE_STATE_QUESTION";
+    private boolean mEnableTouchEvents;
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        return mEnableTouchEvents && super.dispatchTouchEvent(ev);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.game_activity);
         mTextView=findViewById(R.id.game_activity_textview_question);
         b1=findViewById(R.id.game_activity_button_1);
@@ -47,8 +59,17 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
 
         mCurrentQuestion= mQuestionBank.getCurrentQuestion();
         displayQuestion(mCurrentQuestion);
-        mRemainingQuestionCount=3;
-        mScore=0;
+
+        mEnableTouchEvents= true;   //enable the button
+
+        if (savedInstanceState != null) {
+            mScore = savedInstanceState.getInt(BUNDLE_STATE_SCORE);
+            mRemainingQuestionCount = savedInstanceState.getInt(BUNDLE_STATE_QUESTION);
+        } else {
+            mScore = 0;
+            mRemainingQuestionCount = 4;
+        }
+
     }
     private void displayQuestion(final Question question) {
         mTextView.setText(question.getQuestion());
@@ -91,7 +112,29 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
                 3
         );
 
-        return new QuestionBank(Arrays.asList(question1, question2, question3));
+        Question question4 = new Question(
+                "Who did the Mona Lisa paint?",
+                Arrays.asList(
+                        "Michelangelo",
+                        "Leonardo Da Vinci",
+                        "Raphael",
+                        "Carravagio"
+                ),
+                1
+        );
+
+        Question question5 = new Question(
+                "What is the country top-level domain of Belgium?",
+                Arrays.asList(
+                        ".bg",
+                        ".bm",
+                        ".bl",
+                        ".be"
+                ),
+                3
+        );
+
+        return new QuestionBank(Arrays.asList(question1, question2, question3,question4,question5));
 
     }
 
@@ -118,25 +161,52 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
         } else {
             Toast.makeText(this, "Faux!", Toast.LENGTH_SHORT).show();
         }
-        mRemainingQuestionCount--;
 
-        if (mRemainingQuestionCount > 0) {
-            mCurrentQuestion = mQuestionBank.getNextQuestion();
-            displayQuestion(mCurrentQuestion);
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        mEnableTouchEvents = false; //disable buttons after click to let the toast disappear
 
-            builder.setTitle("Well done!")
-                    .setMessage("Your score is " + mScore)
-                    .setPositiveButton("OK", (dialog, which) -> {
-                        Intent intent = new Intent();
-                        intent.putExtra(BUNDLE_EXTRA_SCORE,mScore);
-                        setResult(RESULT_OK,intent);
-                        finish();
-                    })
-                    .create()
-                    .show();
-        }
+        new Handler().postDelayed(new Runnable() {
 
+            @Override
+            public void run() {
+                mRemainingQuestionCount--;
+                // If this is the last question, ends the game.
+                // Else, display the next question.
+                if (mRemainingQuestionCount > 0) {
+                    mCurrentQuestion = mQuestionBank.getNextQuestion();
+                    displayQuestion(mCurrentQuestion);
+                } else {
+                    endGame();
+                }
+
+                mEnableTouchEvents = true; //enable buttons after the delay delayMillis
+            }
+        }, 2000); // LENGTH_SHORT is usually 2 second long
+
+
+
+
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putInt(BUNDLE_STATE_SCORE, mScore);
+        outState.putInt(BUNDLE_STATE_QUESTION, mRemainingQuestionCount);
+    }
+
+    private void endGame(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Well done!")
+                .setMessage("Your score is " + mScore)
+                .setPositiveButton("OK", (dialog, which) -> {
+                    Intent intent = new Intent();
+                    intent.putExtra(BUNDLE_EXTRA_SCORE,mScore);
+                    setResult(RESULT_OK,intent);
+                    finish();
+                })
+                .create()
+                .show();
     }
 }

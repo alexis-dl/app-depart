@@ -26,33 +26,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String SHARED_PREF_USER_INFO_SCORE = "SHARED_PREF_USER_INFO_SCORE";
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (GAME_ACTIVITY_REQUEST_CODE == requestCode && RESULT_OK == resultCode) {
-            // Fetch the score from the Intent
-            int score = data.getIntExtra(GameActivity.BUNDLE_EXTRA_SCORE, 0);
-            //put the score into the Shared Preferences
-            getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE)
-                    .edit()
-                    .putInt(SHARED_PREF_USER_INFO_SCORE, score)
-                    .apply();
-        }
-        // Updating Display when a game is over
-        String firstName = getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE).getString(SHARED_PREF_USER_INFO_NAME, null);
-        int score = getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE).getInt(SHARED_PREF_USER_INFO_SCORE, 0);
-        if(firstName!=null && score!=0){
-            String msg= "\n Welcome back " + firstName + ", your last score was : " + score;
-            mHomePageText.setText(msg);
-            mEditText.setText(firstName);
-            mEditText.setSelection(mEditText.getText().length());
-            mPlayButton.setEnabled(true);
-        }
-
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Log.d("TAG", "onStart() called");
+
         setContentView(R.layout.activity_main);
 
         mEditText = findViewById(R.id.edit_text);
@@ -61,16 +38,6 @@ public class MainActivity extends AppCompatActivity {
         mHomePageText = findViewById(R.id.HomePageText);
 
         mPlayButton.setEnabled(false);
-
-        String firstName = getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE).getString(SHARED_PREF_USER_INFO_NAME, null);
-        int score = getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE).getInt(SHARED_PREF_USER_INFO_SCORE, 0);
-        if(firstName!=null && score!=0){
-            String msg= "\n Welcome back " + firstName + ", your last score was : " + score;
-            mHomePageText.setText(msg);
-            mEditText.setText(firstName);
-            mEditText.setSelection(mEditText.getText().length());
-            mPlayButton.setEnabled(true);
-        }
 
         mEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -85,7 +52,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-            mPlayButton.setEnabled(!editable.toString().isEmpty());
+                // This is where we'll check the user input
+                mPlayButton.setEnabled(!editable.toString().isEmpty());
             }
         });
 
@@ -97,5 +65,37 @@ public class MainActivity extends AppCompatActivity {
             Intent gameActivityIntent = new Intent(MainActivity.this, GameActivity.class);
             startActivityForResult(gameActivityIntent,GAME_ACTIVITY_REQUEST_CODE);
         });
+        greetUser();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (GAME_ACTIVITY_REQUEST_CODE == requestCode && RESULT_OK == resultCode) {
+            // Fetch the score from the Intent
+            int score = data.getIntExtra(GameActivity.BUNDLE_EXTRA_SCORE, 0);
+            //put the score into the Shared Preferences
+            getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE)
+                    .edit()
+                    .putInt(SHARED_PREF_USER_INFO_SCORE, score)
+                    .apply();
+        }
+        greetUser();
+
+    }
+    private void greetUser() {
+        String firstName = getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE).getString(SHARED_PREF_USER_INFO_NAME, null);
+        int score = getSharedPreferences(SHARED_PREF_USER_INFO, MODE_PRIVATE).getInt(SHARED_PREF_USER_INFO_SCORE, -1);
+
+        if (firstName != null) {
+            if (score != -1) {
+                mHomePageText.setText(getString(R.string.welcome_back_with_score, firstName, score));
+            } else {
+                mHomePageText.setText(getString(R.string.welcome_back, firstName));
+            }
+
+            mEditText.setText(firstName);
+            mEditText.setSelection(firstName.length());
+        }
     }
 }
