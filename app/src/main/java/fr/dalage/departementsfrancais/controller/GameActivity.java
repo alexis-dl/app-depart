@@ -3,12 +3,10 @@ package fr.dalage.departementsfrancais.controller;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,7 +15,6 @@ import java.util.Arrays;
 import fr.dalage.departementsfrancais.R;
 import fr.dalage.departementsfrancais.model.Question;
 import fr.dalage.departementsfrancais.model.QuestionBank;
-import fr.dalage.departementsfrancais.model.User;
 
 public class GameActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -30,6 +27,7 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
     Question mCurrentQuestion;
     private int mRemainingQuestionCount;
     private int mScore;
+    public static final String BUNDLE_EXTRA_SCORE = "BUNDLE_EXTRA_SCORE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +47,7 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
 
         mCurrentQuestion= mQuestionBank.getCurrentQuestion();
         displayQuestion(mCurrentQuestion);
-        mRemainingQuestionCount=4;
+        mRemainingQuestionCount=3;
         mScore=0;
     }
     private void displayQuestion(final Question question) {
@@ -119,7 +117,6 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
             mScore++;
         } else {
             Toast.makeText(this, "Faux!", Toast.LENGTH_SHORT).show();
-            mScore--;
         }
         mRemainingQuestionCount--;
 
@@ -131,11 +128,11 @@ public class GameActivity extends AppCompatActivity implements View.OnClickListe
 
             builder.setTitle("Well done!")
                     .setMessage("Your score is " + mScore)
-                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            finish();
-                        }
+                    .setPositiveButton("OK", (dialog, which) -> {
+                        Intent intent = new Intent();
+                        intent.putExtra(BUNDLE_EXTRA_SCORE,mScore);
+                        setResult(RESULT_OK,intent);
+                        finish();
                     })
                     .create()
                     .show();
